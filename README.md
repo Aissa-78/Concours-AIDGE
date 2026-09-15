@@ -12,6 +12,7 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
 - [Fiche projet FlowSense](Fiche_projet_FlowSense.docx)
 - [Plaquette du Challenge AIDGE](Plaquette_ChallengeAidge.pdf)
 - [Règlement du Challenge AIDGE](Reglement-ChallengeAidge.pdf)
+-  Site inernet du Challenge : https://new.express.adobe.com/webpage/7GXZmONRFoJte
 
 ## État actuel
 
