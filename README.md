@@ -49,6 +49,16 @@ dataset/
 
 Les images de données restent locales et ne sont pas publiées sur GitHub. Pour démarrer, essayez d'avoir des exemples variés : différentes lumières, distances, positions et arrière-plans, dans les deux classes.
 
+### Base de départ automatique
+
+Le script suivant télécharge une petite base locale équilibrée issue de **Wake Vision**, un dataset public destiné à la détection binaire de personnes en TinyML. Il récupère par défaut 100 images `vide` et 100 images `personne` pour `train`, puis 25 images de chaque classe pour `validation` :
+
+```bash
+python scripts/download_wake_vision_subset.py
+```
+
+Les images téléchargées restent sur le Mac et ne sont pas envoyées sur GitHub. Consultez [dataset/DATASET.md](dataset/DATASET.md) pour la source, la licence et les limites de cette base de départ.
+
 ### 2. Installer les dépendances Python
 
 Depuis le dossier du projet, créez un environnement pour cette IA puis installez les dépendances :
