@@ -1,0 +1,22 @@
+# Environnements Python et fichiers générés
+.venv/
+.venv-aidge/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Données locales : ne pas publier les images du dataset
+dataset/**/*.jpg
+dataset/**/*.jpeg
+dataset/**/*.png
+dataset/**/*.bmp
+dataset/**/*.webp
+
+# Modèles entraînés : ils peuvent être lourds et sont régénérés par train.py
+models/*.pt
+models/*.pth
+
+# Sources et fichiers temporaires utilisés localement pour l'installation Aidge
+.aidge-source/
+tmp/
+output/

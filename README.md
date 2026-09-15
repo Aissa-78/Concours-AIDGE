@@ -16,11 +16,82 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
 
 ## État actuel
 
-**Phase : cadrage et préparation**
+**Phase : première IA PyTorch — personne / vide**
 
 L'équipe est à sa première séance de travail. Le matériel n'a pas encore été reçu : carte Colibry EvalboardTiny, caméra embarquée, documentation technique détaillée et outil de mesure énergétique.
 
 Nous préparons donc le projet avant le déploiement matériel : environnement Aidge, données, modèle de référence, métriques et démonstrateur.
+
+## Étape 1 — première IA PyTorch : `personne / vide`
+
+Avant de travailler sur Aidge ou le matériel, nous créons une base simple : un réseau de neurones qui reçoit une image et répond soit :
+
+```text
+0 = vide
+1 = personne
+```
+
+Le modèle utilise des images RGB redimensionnées en **64 × 64 pixels**. Il ne compte pas encore les entrées, les sorties ou plusieurs personnes : il répond seulement à la question « une personne est-elle présente dans cette image ? ».
+
+### 1. Placer les images
+
+Ajoutez vos images JPG ou PNG dans les quatre dossiers suivants :
+
+```text
+dataset/
+├── train/
+│   ├── personne/      # images contenant au moins une personne
+│   └── vide/          # images ne contenant personne
+└── validation/
+    ├── personne/      # mêmes catégories, images différentes de train
+    └── vide/
+```
+
+Les images de données restent locales et ne sont pas publiées sur GitHub. Pour démarrer, essayez d'avoir des exemples variés : différentes lumières, distances, positions et arrière-plans, dans les deux classes.
+
+### 2. Installer les dépendances Python
+
+Depuis le dossier du projet, créez un environnement pour cette IA puis installez les dépendances :
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Entraîner le modèle
+
+Après avoir placé les images dans les dossiers ci-dessus :
+
+```bash
+python src/train.py --epochs 15 --batch-size 32
+```
+
+Le script affiche la `loss` et l'`accuracy` à chaque époque. Le meilleur modèle est automatiquement sauvegardé dans :
+
+```text
+models/best_personne_vide_cnn.pt
+```
+
+### 4. Tester une image
+
+Une fois l'entraînement terminé, testez une nouvelle image avec :
+
+```bash
+python src/test.py --image chemin/vers/une_image.jpg
+```
+
+Le résultat affichera `PERSONNE` ou `VIDE`, puis le niveau de confiance.
+
+### Fichiers de cette étape
+
+| Fichier | Rôle |
+|---|---|
+| `src/model.py` | Définit le petit réseau convolutif (CNN). |
+| `src/preprocess.py` | Redimensionne les images en 64 × 64 et impose `0=vide`, `1=personne`. |
+| `src/train.py` | Charge les données, entraîne le modèle, mesure ses résultats et sauvegarde le meilleur modèle. |
+| `src/test.py` | Charge le modèle sauvegardé et prédit une seule image. |
+| `requirements.txt` | Liste les trois dépendances Python nécessaires. |
 
 ## Cas d'usage choisi
 
