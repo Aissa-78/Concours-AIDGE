@@ -8,6 +8,7 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
 
 ## Documents du dépôt
 
+- Vidéo explicative du projet : https://youtu.be/_fUpL8oQr6g
 - [Fiche projet FlowSense](Fiche_projet_FlowSense.docx)
 - [Plaquette du Challenge AIDGE](Plaquette_ChallengeAidge.pdf)
 - [Règlement du Challenge AIDGE](Reglement-ChallengeAidge.pdf)
@@ -95,10 +96,4 @@ Entrées, sorties et occupation estimée
 - Existe-t-il un exporteur Aidge vers ColibryNPU ?
 - Quel outil permettra de mesurer la consommation ?
 
-## Contexte pour un assistant IA
 
-Ce dépôt appartient à une équipe étudiante qui participe au Challenge AIDGE 2026. Le projet est en phase de préparation et le matériel n'est pas encore disponible.
-
-L'assistant doit aider l'équipe à apprendre Aidge progressivement, choisir un modèle de vision très léger, préparer les données et métriques, proposer du code reproductible et respecter la contrainte de consommation inférieure à 5 mW.
-
-Il ne doit pas inventer de caractéristiques matérielles qui ne sont pas confirmées par la documentation. Il doit privilégier une version simple et fonctionnelle avant des optimisations avancées.
