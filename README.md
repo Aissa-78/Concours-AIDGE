@@ -96,4 +96,9 @@ Entrées, sorties et occupation estimée
 - Existe-t-il un exporteur Aidge vers ColibryNPU ?
 - Quel outil permettra de mesurer la consommation ?
 
+## Membre de l'equipe
 
+- EL BAROUD Elias
+- EL GAAMOUCH Aïssa
+- MAHI Rayan
+- MEBARKI Ilian
