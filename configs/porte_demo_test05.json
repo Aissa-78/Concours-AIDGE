@@ -1,0 +1,10 @@
+{
+  "name": "porte_demo_test05",
+  "description": "Exemple de réglage pour test_05_2_personnes_entrer_separees.mp4.",
+  "coordinates": "normalised_0_to_1",
+  "gate": {
+    "line_1": [[0.575431, 0.290865], [0.963362, 0.252404]],
+    "line_2": [[0.637931, 0.359375], [0.963362, 0.318510]]
+  },
+  "inside_reference": [0.750000, 0.900000]
+}

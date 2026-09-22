@@ -9,9 +9,9 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
 ## Documents du dépôt
 
 - Vidéo explicative du projet : https://youtu.be/_fUpL8oQr6g
-- [Fiche projet FlowSense](Fiche_projet_FlowSense.docx)
-- [Plaquette du Challenge AIDGE](Plaquette_ChallengeAidge.pdf)
-- [Règlement du Challenge AIDGE](Reglement-ChallengeAidge.pdf)
+- [Fiche projet FlowSense](Documentation/Fiche_projet_FlowSense.docx)
+- [Plaquette du Challenge AIDGE](Documentation/Plaquette_ChallengeAidge.pdf)
+- [Règlement du Challenge AIDGE](Documentation/Reglement-ChallengeAidge.pdf)
 -  Site inernet du Challenge : https://new.express.adobe.com/webpage/7GXZmONRFoJte
 
 ## État actuel
@@ -107,6 +107,34 @@ Au premier lancement, le modèle nano est téléchargé. Une copie de l'image av
 les rectangles est enregistrée dans `runs/detect_image/`. Le dossier `runs/`
 est généré localement et n'est pas envoyé sur GitHub.
 
+### Calibrer une porte et compter des passages
+
+La caméra ne doit pas voir de vrais traits au sol. Lors de l'installation, on
+définit une fois la zone de porte dans l'image : deux limites et un point du
+côté intérieur. Le réglage ne modifie pas l'IA et peut être réutilisé pour
+toutes les vidéos filmées par la même caméra fixe.
+
+```bash
+python src/calibrate_gate.py \
+  --video videos_test/ma_video.mp4 \
+  --frame 50 \
+  --output configs/porte_01.json
+```
+
+Cliquez les quatre extrémités des deux lignes, puis cliquez un point du côté
+intérieur et appuyez sur `S`. Pour analyser ensuite une vidéo avec ce réglage :
+
+```bash
+python src/count_video.py \
+  --video videos_test/ma_video.mp4 \
+  --config configs/porte_01.json
+```
+
+Le résultat affiche les rectangles, les identifiants de suivi, la zone de
+porte virtuelle et les totaux `Entrées` / `Sorties`. Une nouvelle caméra ou
+une nouvelle porte demande simplement un nouveau fichier JSON de réglage ; le
+code et le modèle restent les mêmes.
+
 ### Fichiers de cette étape
 
 | Fichier | Rôle |
@@ -115,7 +143,10 @@ est généré localement et n'est pas envoyé sur GitHub.
 | `src/preprocess.py` | Redimensionne les images en 64 × 64 et impose `0=vide`, `1=personne`. |
 | `src/train.py` | Charge les données, entraîne le modèle, mesure ses résultats et sauvegarde le meilleur modèle. |
 | `src/test.py` | Charge le modèle sauvegardé et prédit une seule image. |
-| `requirements.txt` | Liste les trois dépendances Python nécessaires. |
+| `src/calibrate_gate.py` | Petite interface locale pour régler une porte en cliquant dans l'image. |
+| `src/count_video.py` | Détecte, suit et compte les passages à travers une porte calibrée. |
+| `configs/` | Réglages de porte en JSON et mode d'emploi. |
+| `requirements.txt` | Liste les dépendances Python nécessaires. |
 
 ## Cas d'usage choisi
 
