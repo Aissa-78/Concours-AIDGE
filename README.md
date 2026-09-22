@@ -93,6 +93,20 @@ python src/test.py --image chemin/vers/une_image.jpg
 
 Le résultat affichera `PERSONNE` ou `VIDE`, puis le niveau de confiance.
 
+## Étape suivante - démonstration YOLO : rectangles autour des personnes
+
+Cette démonstration est séparée de la première IA `vide/personne`. Elle utilise
+un petit modèle YOLO déjà entraîné pour repérer la position de chaque personne
+sur une image. Elle ne fait pas encore de suivi vidéo ni de comptage.
+
+```bash
+python src/detect_image.py --image chemin/vers/une_image.jpg
+```
+
+Au premier lancement, le modèle nano est téléchargé. Une copie de l'image avec
+les rectangles est enregistrée dans `runs/detect_image/`. Le dossier `runs/`
+est généré localement et n'est pas envoyé sur GitHub.
+
 ### Fichiers de cette étape
 
 | Fichier | Rôle |

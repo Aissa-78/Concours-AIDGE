@@ -1,9 +1,11 @@
 # Environnements Python et fichiers générés
 .venv/
 .venv-aidge/
+.DS_Store
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+.google-docs-bridge/
 
 # Données locales : ne pas publier les images du dataset
 dataset/**/*.jpg
@@ -15,6 +17,14 @@ dataset/**/*.webp
 # Modèles entraînés : ils peuvent être lourds et sont régénérés par train.py
 models/*.pt
 models/*.pth
+yolo*.pt
+runs/
+
+# Vidéos de test : elles restent dans un Drive privé partagé avec l'équipe.
+videos_test/*.mp4
+videos_test/*.mov
+videos_test/*.avi
+videos_test/*.mkv
 
 # Sources et fichiers temporaires utilisés localement pour l'installation Aidge
 .aidge-source/
