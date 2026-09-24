@@ -1,0 +1,94 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\geometry{margin=2.3cm}
+\setlist[itemize]{noitemsep, topsep=3pt}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=black}
+
+\title{\vspace{-1.3cm}\textbf{Notes de pré-cadrage}\\[0.2cm]
+\large FlowSense --- Challenge AIDGE 2026}
+\author{EL BAROUD Elias \quad | \quad EL GAAMOUCH Aïssa \quad | \quad MAHI Rayan \quad | \quad MEBARKI Ilian}
+\date{Septembre 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\section*{1. Problème à résoudre}
+
+Dans des lieux isolés, notamment en montagne, il est utile de connaître l'occupation d'un espace sans installer une infrastructure lourde ni transmettre de vidéos vers le cloud. Le projet \textbf{FlowSense} vise à compter les personnes qui entrent et sortent d'une zone à travers une porte ou un couloir.
+
+\section*{2. Objectif du projet}
+
+Concevoir un capteur vidéo embarqué qui détecte les personnes et produit uniquement des données agrégées :
+
+\begin{itemize}
+    \item nombre d'entrées ;
+    \item nombre de sorties ;
+    \item estimation de l'occupation.
+\end{itemize}
+
+Le traitement doit être local, économe en énergie et compatible à terme avec le SoC \textit{ColibryNPU}. La cible du challenge est une consommation inférieure à \textbf{5 mW}.
+
+\section*{3. Scénario de fonctionnement}
+
+\begin{enumerate}
+    \item Une caméra fixe observe une porte ou un couloir.
+    \item Un modèle détecte les personnes dans chaque image.
+    \item Un suivi associe les détections d'une même personne entre plusieurs images.
+    \item La personne traverse une zone virtuelle définie à l'installation.
+    \item Le système ajoute une entrée ou une sortie selon le sens de franchissement.
+\end{enumerate}
+
+La porte n'a pas besoin d'avoir de trait réel. Lors de l'installation, un utilisateur règle une fois la zone de passage dans l'image et indique quel côté correspond à l'intérieur. Cela permet d'utiliser le même système dans différents lieux, sans modifier le code.
+
+\section*{4. Choix techniques provisoires}
+
+\begin{itemize}
+    \item \textbf{Prototype actuel :} YOLO nano pour détecter les personnes, puis ByteTrack pour leur attribuer un identifiant temporaire.
+    \item \textbf{Calibrage :} deux limites virtuelles définissent une petite zone de porte ; un fichier JSON conserve ce réglage.
+    \item \textbf{Comptage :} extérieur $\rightarrow$ intérieur = entrée ; intérieur $\rightarrow$ extérieur = sortie.
+    \item \textbf{Version finale :} modèle beaucoup plus léger, entraîné avec des images variées, puis optimisé et quantifié en INT8 avec AIDGE avant déploiement sur ColibryNPU.
+\end{itemize}
+
+YOLO sert donc aujourd'hui à valider la chaîne \emph{détection $\rightarrow$ suivi $\rightarrow$ comptage}. Il ne constitue pas nécessairement le modèle final compatible avec la contrainte énergétique.
+
+\section*{5. État actuel}
+
+\begin{itemize}
+    \item Première IA PyTorch \texttt{vide / personne} créée comme base d'apprentissage.
+    \item Tests YOLO réalisés sur des images et des vidéos enregistrées par l'équipe.
+    \item Premier comptage validé sur des vidéos de test : deux entrées séparées et une sortie individuelle.
+    \item Outils en cours : calibrage de porte par clics et compteur vidéo configurable.
+\end{itemize}
+
+\section*{6. Prochaines étapes}
+
+\begin{enumerate}
+    \item Tester le compteur sur les scénarios \textit{porte vide}, \textit{une entrée}, \textit{une sortie}, \textit{deux personnes ensemble} et \textit{croisement}.
+    \item Noter les erreurs : personne manquée, faux positif, identifiant perdu ou double comptage.
+    \item Constituer un jeu de données varié : plusieurs portes, angles, éclairages et distances.
+    \item Entraîner un détecteur plus léger et mesurer précision, rappel, latence et mémoire.
+    \item Étudier la compatibilité AIDGE / ColibryNPU, la quantification INT8 et la consommation réelle.
+\end{enumerate}
+
+\section*{7. Questions à confirmer avec les organisateurs}
+
+\begin{itemize}
+    \item La limite de 5 mW inclut-elle la caméra, l'acquisition et le mode veille ?
+    \item Comment la consommation énergétique sera-t-elle mesurée ?
+    \item Quels opérateurs et quels formats de modèles sont pris en charge par ColibryNPU ?
+    \item Quel scénario de comptage sera évalué : flux, distance, lumière, nombre de personnes ?
+\end{itemize}
+
+\vfill
+\noindent\rule{\textwidth}{0.4pt}
+\small Ces notes constituent un document de travail pour cadrer le projet avant la réception du matériel.
+
+\end{document}
