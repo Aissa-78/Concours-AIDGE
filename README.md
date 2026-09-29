@@ -13,7 +13,9 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
 - [Plaquette du Challenge AIDGE](Documentation/Plaquette_ChallengeAidge.pdf)
 - [Règlement du Challenge AIDGE](Documentation/Reglement-ChallengeAidge.pdf)
 -  Site inernet du Challenge : https://new.express.adobe.com/webpage/7GXZmONRFoJte
-
+-  Eclipse Project AIDGE AI : https://gitlab.eclipse.org/eclipse/aidge/aidge
+-  Depot Git AIDGE AI : https://eclipse.dev/aidge/index.html
+  
 ## État actuel
 
 **Phase : première IA PyTorch — personne / vide**
