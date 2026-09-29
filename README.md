@@ -109,6 +109,15 @@ est généré localement et n'est pas envoyé sur GitHub.
 
 ### Calibrer une porte et compter des passages
 
+Sur Mac, double-cliquez sur `FlowSense.command` dans le Finder pour ouvrir
+l'interface à boutons. Choisissez une vidéo, placez les deux traits et le point
+du côté intérieur, enregistrez la porte, puis cliquez sur « Lancer l'analyse ».
+Les totaux et un bouton pour ouvrir la vidéo résultat apparaissent dans la
+fenêtre. Si la caméra reste au même endroit, le bouton « Réutiliser un réglage »
+évite de redessiner la porte.
+
+Les commandes ci-dessous restent disponibles si vous préférez le terminal.
+
 La caméra ne doit pas voir de vrais traits au sol. Lors de l'installation, on
 définit une fois la zone de porte dans l'image : deux limites et un point du
 côté intérieur. Le réglage ne modifie pas l'IA et peut être réutilisé pour
@@ -145,6 +154,7 @@ code et le modèle restent les mêmes.
 | `src/test.py` | Charge le modèle sauvegardé et prédit une seule image. |
 | `src/calibrate_gate.py` | Petite interface locale pour régler une porte en cliquant dans l'image. |
 | `src/count_video.py` | Détecte, suit et compte les passages à travers une porte calibrée. |
+| `src/app.py` et `FlowSense.command` | Interface à boutons et lancement par double-clic sur Mac. |
 | `configs/` | Réglages de porte en JSON et mode d'emploi. |
 | `requirements.txt` | Liste les dépendances Python nécessaires. |
 
