@@ -59,12 +59,22 @@ def to_pixels(point: list[float], width: int, height: int) -> tuple[int, int]:
     return round(point[0] * width), round(point[1] * height)
 
 
+def squared_distance(first: tuple[int, int], second: tuple[int, int]) -> int:
+    return (first[0] - second[0]) ** 2 + (first[1] - second[1]) ** 2
+
+
 class Gate:
     """Transforme les coordonnées du réglage en zones intérieure, porte, extérieure."""
 
     def __init__(self, config: dict, width: int, height: int) -> None:
         self.line_1 = tuple(to_pixels(point, width, height) for point in config["gate"]["line_1"])
         self.line_2 = tuple(to_pixels(point, width, height) for point in config["gate"]["line_2"])
+        # La deuxième ligne peut être tracée dans le sens inverse. Associer
+        # les extrémités proches évite de réduire l'axe de la porte à un point.
+        same_order = squared_distance(self.line_1[0], self.line_2[0]) + squared_distance(self.line_1[1], self.line_2[1])
+        reverse_order = squared_distance(self.line_1[0], self.line_2[1]) + squared_distance(self.line_1[1], self.line_2[0])
+        if reverse_order < same_order:
+            self.line_2 = (self.line_2[1], self.line_2[0])
         self.inside_reference = to_pixels(config["inside_reference"], width, height)
         self.mid_start = (
             (self.line_1[0][0] + self.line_2[0][0]) / 2,
