@@ -129,7 +129,15 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output_path = args.output_dir / f"{args.video.stem}_count.mp4"
-    writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+    # H.264 se lit correctement dans les lecteurs macOS et les navigateurs.
+    # Certains environnements ne disposent pas de cet encodeur : on garde
+    # alors l'ancien format comme solution de repli.
+    writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*"avc1"), fps, (width, height))
+    if not writer.isOpened():
+        writer.release()
+        writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+        if writer.isOpened():
+            print("H.264 indisponible : export vidéo en MPEG-4.", flush=True)
     if not writer.isOpened():
         raise RuntimeError(f"Impossible de créer la vidéo : {output_path}")
 
