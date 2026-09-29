@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import cv2
+from imageio_ffmpeg import write_frames
 from ultralytics import YOLO
 
 
@@ -129,17 +130,19 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output_path = args.output_dir / f"{args.video.stem}_count.mp4"
-    # H.264 se lit correctement dans les lecteurs macOS et les navigateurs.
-    # Certains environnements ne disposent pas de cet encodeur : on garde
-    # alors l'ancien format comme solution de repli.
-    writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*"avc1"), fps, (width, height))
-    if not writer.isOpened():
-        writer.release()
-        writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
-        if writer.isOpened():
-            print("H.264 indisponible : export vidéo en MPEG-4.", flush=True)
-    if not writer.isOpened():
-        raise RuntimeError(f"Impossible de créer la vidéo : {output_path}")
+    # L'exécutable FFmpeg fourni par imageio-ffmpeg est disponible sur
+    # Windows et macOS. Il évite les différences d'encodeurs OpenCV.
+    writer = write_frames(
+        str(output_path),
+        (width, height),
+        fps=fps,
+        codec="libx264",
+        pix_fmt_in="rgb24",
+        pix_fmt_out="yuv420p",
+        macro_block_size=2,
+        output_params=["-movflags", "+faststart"],
+    )
+    writer.send(None)
 
     entries = 0
     exits = 0
@@ -183,9 +186,9 @@ def main() -> None:
             cv2.rectangle(annotated, (10, 10), (265, 92), (0, 0, 0), -1)
             cv2.putText(annotated, f"Entrees : {entries}", (20, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
             cv2.putText(annotated, f"Sorties : {exits}", (20, 76), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
-            writer.write(annotated)
+            writer.send(cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB).tobytes())
     finally:
-        writer.release()
+        writer.close()
 
     print(f"Entrees comptees : {entries}")
     print(f"Sorties comptees : {exits}")

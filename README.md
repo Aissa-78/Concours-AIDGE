@@ -59,11 +59,11 @@ Le script suivant télécharge une petite base locale équilibrée issue de **Wa
 python scripts/download_wake_vision_subset.py
 ```
 
-Les images téléchargées restent sur le Mac et ne sont pas envoyées sur GitHub. Consultez [dataset/DATASET.md](dataset/DATASET.md) pour la source, la licence et les limites de cette base de départ.
+Les images téléchargées restent sur l'ordinateur et ne sont pas envoyées sur GitHub. Consultez [dataset/DATASET.md](dataset/DATASET.md) pour la source, la licence et les limites de cette base de départ.
 
 ### 2. Installer les dépendances Python
 
-Depuis le dossier du projet, créez un environnement pour cette IA puis installez les dépendances :
+Sur Mac, depuis le dossier du projet, créez un environnement pour cette IA puis installez les dépendances :
 
 ```bash
 python3 -m venv .venv
@@ -118,7 +118,22 @@ Les totaux et un bouton pour ouvrir la vidéo résultat apparaissent dans la
 fenêtre. Si la caméra reste au même endroit, le bouton « Réutiliser un réglage »
 évite de redessiner la porte.
 
-Les commandes ci-dessous restent disponibles si vous préférez le terminal.
+Sur Windows, après avoir récupéré le dépôt, installez Python 3.11 ou 3.12
+(64 bits) depuis https://www.python.org/downloads/windows/ en cochant
+« Add python.exe to PATH ». Double-cliquez une seule fois sur
+`Installer_Windows.bat` : ce fichier crée l'environnement `.venv` et installe les
+dépendances sur ce PC. Ensuite, double-cliquez sur `FlowSense_Windows.bat`
+pour ouvrir la même interface. Aucune version Pro de GitHub ou de VS Code
+n'est nécessaire. Chaque ordinateur possède son propre `.venv` ; ne copiez
+pas celui du Mac vers Windows.
+
+Dans l'interface, sélectionnez la vidéo, placez les cinq points, enregistrez
+le réglage, puis lancez l'analyse. La vidéo résultat est dans
+`runs/count_video/`, sur Mac comme sur Windows. L'export MP4 utilise
+H.264 avec le FFmpeg installé via les dépendances Python.
+
+Les commandes ci-dessous utilisent la syntaxe du terminal Mac/Linux. Sur
+Windows, utilisez les deux fichiers .bat et les boutons de l'interface.
 
 La caméra ne doit pas voir de vrais traits au sol. Lors de l'installation, on
 définit une fois la zone de porte dans l'image : deux limites et un point du
@@ -156,7 +171,8 @@ code et le modèle restent les mêmes.
 | `src/test.py` | Charge le modèle sauvegardé et prédit une seule image. |
 | `src/calibrate_gate.py` | Petite interface locale pour régler une porte en cliquant dans l'image. |
 | `src/count_video.py` | Détecte, suit et compte les passages à travers une porte calibrée. |
-| `src/app.py` et `FlowSense.command` | Interface à boutons et lancement par double-clic sur Mac. |
+| `src/app.py`, `FlowSense.command` et `FlowSense_Windows.bat` | Interface à boutons et lancement par double-clic sur Mac ou Windows. |
+| `Installer_Windows.bat` | Installation des dépendances sur un PC Windows. |
 | `configs/` | Réglages de porte en JSON et mode d'emploi. |
 | `requirements.txt` | Liste les dépendances Python nécessaires. |
 
