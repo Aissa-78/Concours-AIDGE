@@ -18,11 +18,12 @@ Le traitement doit rester local. Le système ne transmet ni ne stocke les images
   
 ## État actuel
 
-**Phase : première IA PyTorch — personne / vide**
+**Phase : prototypes logiciels et préparation du modèle embarqué**
 
-L'équipe est à sa première séance de travail. Le matériel n'a pas encore été reçu : carte Colibry EvalboardTiny, caméra embarquée, documentation technique détaillée et outil de mesure énergétique.
-
-Nous préparons donc le projet avant le déploiement matériel : environnement Aidge, données, modèle de référence, métriques et démonstrateur.
+Le dépôt contient un premier classifieur `personne/vide`, une démonstration
+vidéo avec YOLO et un prototype de carte de positions testé dans Aidge sur CPU.
+Le comptage existe dans la démonstration, mais le petit modèle Aidge n'a pas
+encore une qualité de détection validée et n'est pas déployé sur ColibryNPU.
 
 ## Étape 1 — première IA PyTorch : `personne / vide`
 
@@ -94,6 +95,90 @@ python src/test.py --image chemin/vers/une_image.jpg
 ```
 
 Le résultat affichera `PERSONNE` ou `VIDE`, puis le niveau de confiance.
+
+## Prototype Aidge — carte de positions (non entraîné)
+
+Ce prototype est séparé du classifieur `personne/vide` et de la démo YOLO. Il
+reçoit une image RGB de **96 × 96** pixels et produit une grille de **20 × 20**
+scores. À terme, une case à score élevé pourra indiquer une personne, mais
+**pour l'instant les poids sont aléatoires** : la grille ne détecte rien de
+fiable. L'objectif de cette étape est de vérifier le chemin PyTorch → ONNX →
+Aidge avant de préparer des annotations et d'entraîner le modèle.
+
+Depuis la racine du projet, après installation de `requirements.txt` dans
+`.venv`, générez le modèle ONNX et une entrée de référence :
+
+```bash
+./.venv/bin/python src/export_tiny_heatmap.py
+```
+
+Sur ce Mac, Aidge est dans un environnement séparé. Comparez sa sortie CPU à
+celle de PyTorch avec :
+
+```bash
+./.venv-aidge/bin/python src/check_tiny_heatmap_aidge.py
+```
+
+Sous Windows, les scripts Python sont les mêmes ; le chemin de l'interpréteur
+devient `.venv\Scripts\python.exe` (et équivalent pour l'environnement Aidge,
+si Aidge y est installé). Les fichiers générés sont dans `runs/tiny_heatmap/`
+et ne sont pas publiés sur GitHub. Le réseau contient **3 729 paramètres**.
+Une activation bornée (`Hardtanh`) remplace ici `ReLU`, car l'exécution CPU
+Aidge 0.10.1 de `ReLU` échoue actuellement sur ce Mac avec `std::bad_cast` ;
+la compatibilité matérielle Colibry n'est pas encore vérifiée.
+
+### Préparer et corriger les images de détection
+
+Les vidéos locales de `videos_test/` ont servi à créer
+`dataset/detection_proposals/` : **237 images**, dont 179 pour l'entraînement
+et 58 issues de quatre autres vidéos pour la validation. YOLO a proposé 240
+rectangles. Ces fichiers restent locaux (ignorés par Git). Ils ne sont **pas**
+des annotations fiables tant qu'une personne ne les a pas vérifiés.
+Sur un autre ordinateur, après avoir copié les vidéos **en privé** dans
+`videos_test/`, on peut recréer ces propositions avec
+`python scripts/prepare_detection_dataset.py`. Le script refuse d'écraser un
+jeu existant pour protéger les corrections humaines.
+
+Les **237 images** (179 entraînement, 58 validation) ont été vérifiées. Pour
+rouvrir les images de validation sur Mac :
+
+```bash
+./.venv/bin/python scripts/review_detection_dataset.py --split validation --include-reviewed
+```
+
+Dans la fenêtre, glissez avec le clic gauche pour ajouter un rectangle, faites
+un clic droit sur un rectangle erroné pour l'enlever, puis appuyez sur `S` pour
+enregistrer et passer à l'image suivante. `N` passe sans valider ; `Q` quitte.
+Sur Windows, utilisez `.venv\Scripts\python.exe` à la place de
+`./.venv/bin/python`. Le fichier `manifest.csv` indique `reviewed=oui` pour les
+images corrigées. Pour revoir ensuite l'entraînement, utilisez `--split train`.
+
+Les essais précédents sont conservés dans `models/tiny_heatmap_pseudo.pt` et
+`models/tiny_heatmap_val_corrigee.pt`. Après correction de toutes les images,
+un nouvel entraînement de 50 époques a produit `models/tiny_heatmap_corrige.pt`.
+Pour reproduire l'entraînement et vérifier l'export :
+
+```bash
+./.venv/bin/python src/train_tiny_heatmap.py --epochs 50 --checkpoint models/tiny_heatmap_corrige.pt
+./.venv/bin/python src/evaluate_tiny_heatmap.py --checkpoint models/tiny_heatmap_corrige.pt --threshold 0.5
+./.venv/bin/python src/export_tiny_heatmap.py --checkpoint models/tiny_heatmap_corrige.pt --output-dir runs/tiny_heatmap_corrige
+./.venv-aidge/bin/python src/check_tiny_heatmap_aidge.py --run-dir runs/tiny_heatmap_corrige
+```
+
+Au seuil fixe `0.5`, l'évaluation *provisoire* des centres sur les 58 images
+de validation donne **29 % de précision** et **65 % de rappel**. Mais un
+contrôle visuel a révélé que certaines images marquées « sans personne »
+contiennent en réalité une personne partiellement visible (par exemple la
+13e image de validation). Les chiffres de fausses alertes et la précision
+ne sont donc pas fiables tant que la règle d'annotation des personnes
+partielles n'est pas appliquée de façon cohérente. La loss de validation du
+meilleur modèle est `0.4516`. La compatibilité Aidge CPU est vérifiée ; la
+qualité du détecteur et la compatibilité ColibryNPU restent à établir.
+
+Ces commandes servent à **fabriquer et tester** le modèle. Une fois la caméra
+installée, elle n'aura pas besoin de ces annotations pour traiter une nouvelle
+vidéo. L'emplacement de la porte et le sens entrée/sortie restent un réglage
+séparé du détecteur.
 
 ## Étape suivante - démonstration YOLO : rectangles autour des personnes
 

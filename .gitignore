@@ -13,6 +13,7 @@ dataset/**/*.jpeg
 dataset/**/*.png
 dataset/**/*.bmp
 dataset/**/*.webp
+dataset/detection_proposals/
 
 # Modèles entraînés : ils peuvent être lourds et sont régénérés par train.py
 models/*.pt
