@@ -1,1 +1,3 @@
 *.bat text eol=crlf
+# Les lignes de contexte vides d'un diff unifie portent un espace obligatoire.
+patches/*.patch whitespace=-blank-at-eol

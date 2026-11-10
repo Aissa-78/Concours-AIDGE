@@ -1,0 +1,54 @@
+diff --git a/aidge/aidge_core/src/operator/MetaOperatorDefs/PaddedConvDepthWise.cpp b/aidge/aidge_core/src/operator/MetaOperatorDefs/PaddedConvDepthWise.cpp
+--- a/aidge/aidge_core/src/operator/MetaOperatorDefs/PaddedConvDepthWise.cpp
++++ b/aidge/aidge_core/src/operator/MetaOperatorDefs/PaddedConvDepthWise.cpp
+@@ -77,5 +77,23 @@ std::shared_ptr<Aidge::Node> Aidge::PaddedConvDepthWise(
+     return metaOpNode;
+ }
+ 
++// Ensure the specializations used by the Python bindings are linked on macOS.
++template std::shared_ptr<Aidge::Node> Aidge::PaddedConvDepthWise<1>(
++    const Aidge::DimSize_t,
++    const std::array<Aidge::DimSize_t, 1> &,
++    const std::string &,
++    const std::array<Aidge::DimSize_t, 1> &,
++    const std::array<Aidge::DimSize_t, 2> &,
++    const std::array<Aidge::DimSize_t, 1> &,
++    bool);
++template std::shared_ptr<Aidge::Node> Aidge::PaddedConvDepthWise<2>(
++    const Aidge::DimSize_t,
++    const std::array<Aidge::DimSize_t, 2> &,
++    const std::string &,
++    const std::array<Aidge::DimSize_t, 2> &,
++    const std::array<Aidge::DimSize_t, 4> &,
++    const std::array<Aidge::DimSize_t, 2> &,
++    bool);
++
+ template <std::array<Aidge::DimSize_t, 1>::size_type DIM>
+ std::shared_ptr<Aidge::MetaOperator_Op> Aidge::PaddedConvDepthWise_Op(
+diff --git a/aidge/aidge_core/aidge_core/export_utils/export_utils.py b/aidge/aidge_core/aidge_core/export_utils/export_utils.py
+--- a/aidge/aidge_core/aidge_core/export_utils/export_utils.py
++++ b/aidge/aidge_core/aidge_core/export_utils/export_utils.py
+@@ -48,7 +48,10 @@ def get_node_from_metaop(node: aidge_core.Node, node_type: str):
+     if node.type() == node_type:
+         return [node]
+     res = []
+-    if isinstance(node.get_operator(), aidge_core.MetaOperatorOp):
++    # Some leaf operators (notably Round) abort when get_operator() is called
++    # through these macOS Python bindings. Only inspect known metaoperators.
++    if node.type() in ("@NNPA", "Quantizer", "QFC", "QConv", "QConvDw",
++                       "QConv2D", "QConvDepthWise2D"):
+         for n in node.get_operator().get_micro_graph().get_nodes():
+             res += get_node_from_metaop(n, node_type)
+     return res
+diff --git a/aidge/aidge_onnx/aidge_onnx/node_import/onnx_converters/relu.py b/aidge/aidge_onnx/aidge_onnx/node_import/onnx_converters/relu.py
+--- a/aidge/aidge_onnx/aidge_onnx/node_import/onnx_converters/relu.py
++++ b/aidge/aidge_onnx/aidge_onnx/node_import/onnx_converters/relu.py
+@@ -56,7 +56,7 @@ def import_relu(
+         )
+         return None
+ 
+-    my_node = aidge_core.Node(aidge_core.ReLUOp(), name=node_name)
++    my_node = aidge_core.ReLU(name=node_name)
+     Log.info(
+         f"Loaded node [\033[1m\033[3m{node_name}\033[0m] of type [\033[1m\033[3m{onnx_node.op_type}\033[0m]"
+     )

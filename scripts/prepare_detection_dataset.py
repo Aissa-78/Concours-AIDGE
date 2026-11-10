@@ -26,6 +26,14 @@ def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--video-dir", type=Path, default=Path("videos_test"))
     parser.add_argument(
+        "--video-glob", default="*",
+        help="Motif des fichiers vidéo à sélectionner (ex. porte_B_*.mp4).",
+    )
+    parser.add_argument(
+        "--all-validation", action="store_true",
+        help="Placer toutes les vidéos dans la validation pour un test indépendant.",
+    )
+    parser.add_argument(
         "--output-dir", type=Path, default=Path("dataset/detection_proposals")
     )
     parser.add_argument("--model", type=Path, default=Path("yolo26n.pt"))
@@ -76,7 +84,7 @@ def main() -> None:
             "pour ne pas écraser des corrections humaines."
         )
     videos = sorted(
-        path for path in args.video_dir.iterdir()
+        path for path in args.video_dir.glob(args.video_glob)
         if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
     )
     if len(videos) < 2:
@@ -85,7 +93,7 @@ def main() -> None:
         raise SystemExit(f"Modèle YOLO absent : {args.model}")
 
     validation_count = max(1, math.ceil(len(videos) * 0.2))
-    validation_videos = set(videos[-validation_count:])
+    validation_videos = set(videos) if args.all_validation else set(videos[-validation_count:])
     model = YOLO(str(args.model))
     rows: list[dict[str, str | int | float]] = []
     preview_dir = args.output_dir / "apercus"

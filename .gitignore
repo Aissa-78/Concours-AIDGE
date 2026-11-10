@@ -1,6 +1,9 @@
 # Environnements Python et fichiers générés
 .venv/
 .venv-aidge/
+.venv-aidge-colibry/
+.venv-wsl/
+.venv-aidge-wsl/
 .DS_Store
 __pycache__/
 *.py[cod]
@@ -13,11 +16,19 @@ dataset/**/*.jpeg
 dataset/**/*.png
 dataset/**/*.bmp
 dataset/**/*.webp
-dataset/detection_proposals/
+dataset/detection_*/
+dataset/porte_B_test/
+dataset/coco_person_subset/
+dataset/coco_profile_*/
+dataset/profile_*/
+dataset/wepdtof_*/
+dataset/camera_*/
 
 # Modèles entraînés : ils peuvent être lourds et sont régénérés par train.py
 models/*.pt
 models/*.pth
+models/*.onnx
+models/*.npz
 yolo*.pt
 runs/
 
@@ -26,8 +37,11 @@ videos_test/*.mp4
 videos_test/*.mov
 videos_test/*.avi
 videos_test/*.mkv
+videos_entrainement_*/
+videotest2/
 
 # Sources et fichiers temporaires utilisés localement pour l'installation Aidge
 .aidge-source/
+.aidge-colibry-source/
 tmp/
 output/

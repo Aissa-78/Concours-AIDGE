@@ -62,6 +62,13 @@ def write_boxes(label_path: Path, boxes: list[list[float]], width: int, height: 
     label_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
 
 
+def describe_image(row: dict) -> str:
+    """Les nouveaux manifests n'ont pas obligatoirement de numéro de frame."""
+    video = row.get("video", "Image")
+    frame = row.get("frame")
+    return f"{video} frame {frame}" if frame not in (None, "") else f"{video} | {Path(row['image']).name}"
+
+
 def main() -> None:
     args = arguments()
     manifest_path = args.dataset_dir / "manifest.csv"
@@ -83,8 +90,9 @@ def main() -> None:
     if not 1 <= args.start_index <= len(selected):
         raise SystemExit(f"--start-index doit être entre 1 et {len(selected)}.")
 
+    print(f"{len(selected)} images à revoir. Clic gauche glissé : ajouter ; clic droit : supprimer ; S : sauver ; P : retour ; Q : quitter.", flush=True)
     window = "FlowSense - annotation"
-    cv2.namedWindow(window, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(window, cv2.WINDOW_AUTOSIZE)
     position = args.start_index - 1
     while 0 <= position < len(selected):
         row_index = selected[position]
@@ -95,7 +103,8 @@ def main() -> None:
         height, width = image.shape[:2]
         label_path = args.dataset_dir / row["label"]
         state = {"boxes": read_boxes(label_path, width, height), "start": None}
-        scale = min(1.0, 1100 / width, 760 / height)
+        # Agrandir les petites images caméra sans changer les coordonnées des labels.
+        scale = min(3.0, 1100 / width, 760 / height)
         display_size = (round(width * scale), round(height * scale))
 
         def mouse(event, x, y, flags, userdata):
@@ -134,10 +143,13 @@ def main() -> None:
             cv2.imshow(window, cv2.resize(canvas, display_size))
             cv2.setWindowTitle(
                 window,
-                f"{position + 1}/{len(selected)} | {row['video']} frame {row['frame']} "
+                f"{position + 1}/{len(selected)} | {describe_image(row)} "
                 f"| {len(state['boxes'])} rectangles | S=sauver N=suivant P=precedent Q=quitter",
             )
             key = cv2.waitKey(30) & 0xFF
+            if cv2.getWindowProperty(window, cv2.WND_PROP_VISIBLE) < 1:
+                cv2.destroyAllWindows()
+                return
             if key in (ord("s"), ord("S")):
                 write_boxes(label_path, state["boxes"], width, height)
                 row["reviewed"] = "oui"
