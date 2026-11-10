@@ -22,11 +22,15 @@ def main() -> None:
     )
     args = parser.parse_args()
     torch.manual_seed(7)
-    model = TinyHeatmap().eval()
+    activation = "hardtanh"
+    checkpoint = None
     if args.checkpoint:
         if not args.checkpoint.is_file():
             raise SystemExit(f"Checkpoint introuvable : {args.checkpoint}")
         checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+        activation = checkpoint.get("activation", "hardtanh")
+    model = TinyHeatmap(activation=activation).eval()
+    if checkpoint is not None:
         model.load_state_dict(checkpoint["model_state_dict"])
     image = torch.rand(1, 3, 96, 96)
 
@@ -51,6 +55,7 @@ def main() -> None:
 
     print(f"Modèle ONNX : {onnx_path}")
     print(f"Paramètres : {sum(p.numel() for p in model.parameters())}")
+    print(f"Activation : {activation}")
     print(f"Entrée : {tuple(image.shape)} ; sortie : {tuple(expected.shape)}")
     if args.checkpoint:
         print(f"Poids chargés : {args.checkpoint}")

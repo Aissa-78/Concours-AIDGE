@@ -97,6 +97,10 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument(
+        "--activation", choices=("hardtanh", "relu"), default="hardtanh",
+        help="Activation des couches internes ; relu pour un essai Colibry.",
+    )
+    parser.add_argument(
         "--checkpoint", type=Path, default=Path("models/tiny_heatmap_pseudo.pt")
     )
     parser.add_argument(
@@ -140,7 +144,7 @@ def main() -> None:
         DetectionFrames(args.data_dir, validation_rows), batch_size=args.batch_size,
         shuffle=False, num_workers=0,
     )
-    model = TinyHeatmap()
+    model = TinyHeatmap(activation=args.activation)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([15.0]))
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     best_validation_loss = float("inf")
@@ -161,6 +165,7 @@ def main() -> None:
                 "model_state_dict": model.state_dict(),
                 "image_size": IMAGE_SIZE,
                 "grid_size": GRID_SIZE,
+                "activation": args.activation,
                 "teacher_labels_unreviewed": unreviewed_validation > 0,
                 "best_validation_loss": best_validation_loss,
             }, args.checkpoint)

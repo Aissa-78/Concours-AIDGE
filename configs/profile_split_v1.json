@@ -1,0 +1,22 @@
+{
+  "purpose": "Essai profils : séparation par prise avant extraction, pas un test indépendant d'une autre porte",
+  "train": [
+    "1 personne vers la Droite.mp4",
+    "1personne_gauchedroite_1personnedroitegauche.mp4",
+    "1personnes_gauchedroite.mp4",
+    "2 personne vers la Gauche.mp4",
+    "2personnes_1m_gauchedroite.mp4",
+    "2personnes_gauchedroite.mp4",
+    "2personnesdroitegauche.mp4"
+  ],
+  "validation": [
+    "1personnegauchedroite.mp4",
+    "1personne_droitegauche.mp4",
+    "2 personne vers la gauche(1).mp4"
+  ],
+  "test": [
+    "1personne_droitegauche_1personne_gauchedroite.mp4",
+    "2 personne vers la DROITE.mp4",
+    "2personnedroitegauche.mp4"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "testvideo_jour25",
+  "description": "Zone de porte réglée une fois pour une caméra fixe.",
+  "coordinates": "normalised_0_to_1",
+  "gate": {
+    "line_1": [
+      [
+        0.463362,
+        0.450721
+      ],
+      [
+        0.405172,
+        0.597356
+      ]
+    ],
+    "line_2": [
+      [
+        0.474138,
+        0.606971
+      ],
+      [
+        0.530172,
+        0.460337
+      ]
+    ]
+  },
+  "inside_reference": [
+    0.170259,
+    0.481971
+  ]
+}

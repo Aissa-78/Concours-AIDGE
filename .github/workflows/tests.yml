@@ -1,0 +1,42 @@
+name: Tests Windows et Linux
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: Python 3.12 - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les dependances CPU
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+      - name: Verifier les imports sans interface graphique
+        env:
+          YOLO_CONFIG_DIR: ${{ runner.temp }}/flowsense-yolo
+        run: python scripts/check_setup.py --no-gui
+      - name: Tests sans donnees privees ni Aidge
+        env:
+          YOLO_CONFIG_DIR: ${{ runner.temp }}/flowsense-yolo
+        run: python -m unittest discover -s tests -v

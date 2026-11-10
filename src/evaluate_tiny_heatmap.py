@@ -63,8 +63,10 @@ def main() -> None:
     if not rows or any(row["reviewed"] != "oui" for row in rows):
         raise SystemExit("Les images de validation doivent toutes être vérifiées.")
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    model = TinyHeatmap().eval()
+    activation = checkpoint.get("activation", "hardtanh")
+    model = TinyHeatmap(activation=activation).eval()
     model.load_state_dict(checkpoint["model_state_dict"])
+    print(f"Activation du modèle : {activation}")
     dataset = DetectionFrames(args.data_dir, rows)
     true_positive = false_positive = false_negative = 0
     empty_images = empty_false_alarms = 0
