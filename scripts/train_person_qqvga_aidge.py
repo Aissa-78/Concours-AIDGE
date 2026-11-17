@@ -176,7 +176,7 @@ def main():
                     batch = order[offset:offset+args.batch_size]
                     if info.get("profile_run"):
                         from profile_training_data import augment_profile
-                        augmented = [augment_profile(data["train"]["images"][i], truths["train"][i], rng, enabled=not args.no_augmentation) for i in batch]
+                        augmented = [augment_profile(data["train"]["images"][i], truths["train"][i], rng, enabled=not args.no_augmentation, **geometry) for i in batch]
                     else:
                         augmented = [augment_sample(data["train"]["images"][i], truths["train"][i], rng,
                                       geometric=not args.no_augmentation, photometric=not args.no_augmentation) for i in batch]

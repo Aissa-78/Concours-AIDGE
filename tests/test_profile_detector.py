@@ -16,6 +16,32 @@ from prepare_profile_mix import local_video,video_name
 
 
 class ProfileDetectorTests(unittest.TestCase):
+    def test_camera_geometry_preserves_checkpoint_shapes_and_decoding(self):
+        old = ProfileDetector()
+        camera = ProfileDetector(output_stride=8).eval()
+        camera.load_state_dict(old.state_dict(), strict=True)
+        with torch.no_grad():
+            output = camera(torch.zeros(2, 1, 120, 160))
+        self.assertEqual(tuple(output.shape), (2, 5, 15, 20))
+        boxes = [(.3, .5, .2, .6), (.75, .5, .2, .5)]
+        heat, distances, mask = targets_from_boxes(boxes, 160, 120, 8)
+        logits = np.full_like(heat, -20)
+        logits[mask > 0] = 20
+        metrics, _ = evaluate_boxes(np.concatenate([distances, logits])[None],
+                                    [boxes], width=160, height=120, stride=8,
+                                    local_maximum=True)
+        self.assertEqual(metrics['tp'], 2)
+        self.assertEqual(metrics['f1'], 1.)
+
+    def test_camera_augmentation_uses_requested_geometry(self):
+        image = np.zeros((1, 120, 160), dtype=np.float32)
+        value, targets, boxes = augment_profile(image, [(.3, .5, .2, .6)],
+            np.random.default_rng(4), width=160, height=120, stride=8)
+        self.assertEqual(value.shape, image.shape)
+        self.assertEqual(targets[0].shape, (1, 15, 20))
+        self.assertEqual(float(targets[2].sum()), 1.)
+        self.assertEqual(float(boxes[0, 1]), .5)
+
     def test_output_geometry_and_parameter_budget(self):
         model=ProfileDetector().eval()
         with torch.no_grad(): output=model(torch.zeros(2,1,HEIGHT,WIDTH))

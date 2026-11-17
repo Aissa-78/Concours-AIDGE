@@ -40,6 +40,21 @@ l'exécution Aidge/Colibry sur Windows.
   
 ## État actuel
 
+### Mise à jour du 17 novembre : caméra réelle et 2 000 images COCO
+
+La caméra Colibry fournit maintenant des images grises **160 × 120** sur Mac.
+Un lot local de **2 000 nouvelles images COCO annotées** est préparé :
+1 600 pour l'entraînement, 400 pour la validation. Il contient 1 300 images
+avec personnes et 700 sans personne annotée. Les images et les poids restent
+hors du dépôt ; les scripts sont partagés.
+
+Le [guide caméra et COCO 2000](Documentation/Camera_et_COCO_2000.md) donne les
+commandes Mac/Windows, les fichiers privés nécessaires et les résultats.
+Attention : le lot de 2 000 images est **préparé, pas encore entraîné**.
+Le premier essai avec les photos de la caméra atteint un F1 de 90,9 % sur
+8 images de validation, mais manque les 3 personnes des 10 images de test.
+Ce modèle reste donc insuffisant ; ce chiffre ne mesure pas la fiabilité du comptage.
+
 **Phase : prototypes logiciels et préparation du modèle embarqué**
 
 Le dépôt contient un premier classifieur `personne/vide`, une démonstration

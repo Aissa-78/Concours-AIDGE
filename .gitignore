@@ -4,6 +4,10 @@
 .venv-aidge-colibry/
 .venv-wsl/
 .venv-aidge-wsl/
+.venv-colibry-hw/
+.local/colibry_sdk/
+.local/corev/
+.local/colibry_examples/
 .DS_Store
 __pycache__/
 *.py[cod]
@@ -20,6 +24,7 @@ dataset/detection_*/
 dataset/porte_B_test/
 dataset/coco_person_subset/
 dataset/coco_profile_*/
+dataset/coco_qqvga_*/
 dataset/profile_*/
 dataset/wepdtof_*/
 dataset/camera_*/
