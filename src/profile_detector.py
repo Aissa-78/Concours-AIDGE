@@ -11,11 +11,14 @@ from profile_training_data import WIDTH, HEIGHT, STRIDE
 
 
 class ProfileDetector(nn.Module):
-    def __init__(self, channels=24, blocks=3):
+    def __init__(self, channels=24, blocks=3, output_stride=16):
         super().__init__()
+        if output_stride not in (8, 16):
+            raise ValueError('Stride de sortie attendu : 8 ou 16.')
         layers = []
-        for before, after in ((1, 8), (8, 12), (12, 16), (16, channels)):
-            layers.extend([nn.Conv2d(before, after, 3, stride=2, padding=1), nn.ReLU()])
+        for index, (before, after) in enumerate(((1, 8), (8, 12), (12, 16), (16, channels))):
+            stride = 1 if index == 3 and output_stride == 8 else 2
+            layers.extend([nn.Conv2d(before, after, 3, stride=stride, padding=1), nn.ReLU()])
         # Champ réceptif 223 pixels avec trois blocs 5x5 à stride global 16.
         # Plus de contexte pour distinguer un corps entier d'un morceau de décor.
         for _ in range(blocks):
