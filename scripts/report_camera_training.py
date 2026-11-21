@@ -18,11 +18,11 @@ sys.path.insert(0, str(ROOT / 'src'))
 from person_detection_math import evaluate_boxes
 
 
-def infer(model, images, destination, prefix):
+def infer(model, images, destination, prefix, aidge_python=None):
     inputs = destination / (prefix + '_inputs.npz')
     outputs = destination / (prefix + '_logits.npy')
     np.savez_compressed(inputs, images=images)
-    python = ROOT / '.venv-aidge-colibry' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+    python = aidge_python or ROOT / '.venv-aidge-colibry' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
     env = dict(os.environ, OMP_NUM_THREADS='4', OPENBLAS_NUM_THREADS='4')
     subprocess.run([str(python), str(ROOT / 'scripts/infer_person_qqvga_aidge.py'),
                     '--model', str(model), '--inputs', str(inputs), '--output', str(outputs),
@@ -49,6 +49,7 @@ def preview(image, detail, title):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir', type=Path, required=True)
+    parser.add_argument('--aidge-python', type=Path, help='Python Aidge à utiliser, notamment .venv-aidge-linux/bin/python.')
     args = parser.parse_args()
     run = args.run_dir.absolute()
     if json.loads((run / 'progress.json').read_text())['status'] != 'completed':
@@ -69,9 +70,9 @@ def main():
         images.append(image[None].astype(np.float32) / 255)
         truths.append([tuple(map(float, line.split()[1:])) for line in (source / row['label']).read_text().splitlines()])
     images = np.stack(images)
-    new = infer(selected_model, images, run, 'camera_selected')
+    new = infer(selected_model, images, run, 'camera_selected', args.aidge_python)
     old_images = np.stack([cv2.resize(image[0], (320, 240), interpolation=cv2.INTER_LINEAR)[None] for image in images])
-    old = infer(previous_model, old_images, run, 'camera_previous')
+    old = infer(previous_model, old_images, run, 'camera_previous', args.aidge_python)
     summary = {'threshold': .5, 'match_iou': .5, 'selected_epoch': training['selected_epoch'],
                'model_sha256': hashlib.sha256(selected_model.read_bytes()).hexdigest(),
                'previous_model_sha256': hashlib.sha256(previous_model.read_bytes()).hexdigest(),
@@ -100,7 +101,7 @@ def main():
             cv2.imwrite(str(previews / filename), comparison)
             cards.append(f'<article><h3>{split} — image {camera_rows[index]["frame"]}</h3><p>Après : {a["tp"]} retrouvée(s), {a["fp"]} fausse(s), {a["fn"]} manquée(s).</p><img src="apercus/{html.escape(filename)}"></article>')
     (run / 'camera_metrics.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2))
-    (run / 'rapport.html').write_text('''<!doctype html><html lang="fr"><meta charset="utf-8"><title>FlowSense : entraînement caméra réelle</title><style>body{font:18px system-ui;max-width:1100px;margin:35px auto;padding:15px}p{line-height:1.5}table{border-collapse:collapse;width:100%}td,th{padding:12px;border:1px solid #ddd}img{width:100%;max-width:960px}article{margin-top:30px;border-top:1px solid #aaa}.note{background:#fff1d6;padding:18px}</style><h1>Notre modèle adapté à la caméra réelle</h1><p>Entrée 160 × 120 en gris. 240 images distinctes : 36 nouvelles captures, 132 COCO et 72 anciennes images de profil. Mélange équilibré caméra/historique, augmentations uniquement en entraînement. Apprentissage Aidge CPU FP32, sans poids YOLO.</p>'''+f'<p>Meilleur checkpoint : époque {training["selected_epoch"]}, après {training["epochs_completed"]} époques. Seuil fixé à 0,50, correspondance rectangle à IoU ≥ 0,50.</p>'+'''<p class="note">F1 de détection, pas pourcentage de passages correctement comptés. Validation caméra : seulement 8 images. Test : 10 images et 3 présences annotées, même salle et même session. Ce lot n’a pas servi à sélectionner les poids. Les images et annotations ont déjà été vues pour préparer les données : ce n’est pas un test final aveugle dans un nouveau lieu.</p><table><tr><th>Lot</th><th>Images</th><th>Présences</th><th>F1 avant</th><th>F1 après</th><th>Retrouvées</th><th>Fausses</th><th>Manquées</th></tr>'''+''.join(result_rows)+'''</table><p>Avant : V1 originale sur images caméra agrandies vers 320 × 240. Après : modèle adapté, quatrième convolution à stride 1 et grille de sortie à stride 8. La comparaison inclut le changement de géométrie et l’entraînement. Elle ne mesure pas le seul effet des nouvelles photos.</p><p>Blanc : annotation humaine. Vert : prédiction associée à une annotation. Orange : prédiction sans correspondance. Les images train restent hors de ces aperçus. Le modèle n’est pas encore quantifié ni déployé sur Colibry. La fenêtre caméra ne fait pas encore tourner ce détecteur.</p>'''+''.join(cards), encoding='utf-8')
+    (run / 'rapport.html').write_text('''<!doctype html><html lang="fr"><meta charset="utf-8"><title>FlowSense : entraînement caméra réelle</title><style>body{font:18px system-ui;max-width:1100px;margin:35px auto;padding:15px}p{line-height:1.5}table{border-collapse:collapse;width:100%}td,th{padding:12px;border:1px solid #ddd}img{width:100%;max-width:960px}article{margin-top:30px;border-top:1px solid #aaa}.note{background:#fff1d6;padding:18px}</style><h1>Notre modèle adapté à la caméra réelle</h1><p>Entrée 160 × 120 en gris. Les effectifs propres à cet essai sont décrits dans dataset.json : captures réelles, images COCO et anciennes images de profil. Mélange équilibré caméra/historique, augmentations uniquement en entraînement. Apprentissage Aidge CPU FP32, sans poids YOLO.</p>'''+f'<p>Meilleur checkpoint : époque {training["selected_epoch"]}, après {training["epochs_completed"]} époques. Seuil fixé à 0,50, correspondance rectangle à IoU ≥ 0,50.</p>'+'''<p class="note">F1 de détection, pas pourcentage de passages correctement comptés. Validation caméra : seulement 8 images. Test : 10 images et 3 présences annotées, même salle et même session. Ce lot n’a pas servi à sélectionner les poids. Les images et annotations ont déjà été vues pour préparer les données : ce n’est pas un test final aveugle dans un nouveau lieu.</p><table><tr><th>Lot</th><th>Images</th><th>Présences</th><th>F1 avant</th><th>F1 après</th><th>Retrouvées</th><th>Fausses</th><th>Manquées</th></tr>'''+''.join(result_rows)+'''</table><p>Avant : V1 originale sur images caméra agrandies vers 320 × 240. Après : modèle adapté, quatrième convolution à stride 1 et grille de sortie à stride 8. La comparaison inclut le changement de géométrie et l’entraînement. Elle ne mesure pas le seul effet des nouvelles photos.</p><p>Blanc : annotation humaine. Vert : prédiction associée à une annotation. Orange : prédiction sans correspondance. Les images train restent hors de ces aperçus. Le modèle n’est pas encore quantifié ni déployé sur Colibry. La fenêtre caméra ne fait pas encore tourner ce détecteur.</p>'''+''.join(cards), encoding='utf-8')
     print(json.dumps(summary, indent=2))
 
 

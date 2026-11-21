@@ -12,6 +12,11 @@ elles ne sont pas publiées sur GitHub.
 
 ## Pour les camarades sur Windows
 
+**Nouveau : [guide complet Windows et Linux](Documentation/Windows_Linux_complet.md)**
+avec installateurs séparés pour l'interface, Aidge sous Linux/WSL et la caméra
+Colibry. Les données, le SDK et le firmware privé restent à récupérer auprès
+du groupe. La validation matérielle Windows/Linux reste à faire sur vos PC.
+
 1. Récupérer le dépôt à jour (`git pull --ff-only` ou **Code → Download ZIP**, puis extraire le ZIP).
 2. Ouvrir le dossier extrait dans VS Code, avec Python 3.11 ou 3.12 installé.
 3. Double-cliquer sur **Installer_Windows.bat**, puis sur **FlowSense_Windows.bat** pour l'interface YOLO.

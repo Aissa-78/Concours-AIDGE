@@ -40,3 +40,12 @@ jobs:
         env:
           YOLO_CONFIG_DIR: ${{ runner.temp }}/flowsense-yolo
         run: python -m unittest discover -s tests -v
+      - name: Verifier les plans d'installation sans modification du systeme
+        run: |
+          python scripts/install_platform.py --profile app --dry-run
+          python scripts/install_platform.py --profile hardware --dry-run
+      - name: Verifier les lanceurs Linux et le plan Aidge
+        if: runner.os == 'Linux'
+        run: |
+          bash -n Installer_Linux.sh FlowSense_Linux.sh Ouvrir_camera_Linux.sh
+          python scripts/install_platform.py --profile aidge --dry-run
