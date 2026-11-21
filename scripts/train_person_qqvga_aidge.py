@@ -60,9 +60,10 @@ def main():
         raise SystemExit("Entraînement existant : préparer un nouveau dossier pour le conserver.")
     info = json.loads((run/"dataset.json").read_text())
     geometry = info.get("geometry", {})
-    source_names = sorted(info["train"])
-    if len(source_names) != 2:
-        raise ValueError("Le mélange équilibré attend exactement deux sources.")
+    training_sources = sorted(info["train"])
+    source_names = sorted(info["validation"])
+    if len(training_sources) not in (1, 2):
+        raise ValueError("Une source seule ou deux sources équilibrées attendues.")
     input_shape = tuple(info.get("input_shape", [1, 120, 160]))
     loss_function = partial(detection_loss, classification=info.get("classification", "focal"))
     metrics_function = partial(evaluate_boxes, local_maximum=info.get("local_maximum", False), **geometry)
@@ -144,13 +145,15 @@ def main():
                 "threshold": .5, "box_match_iou": .5, "nms_iou": .5, "seed": info["seed"],
                 "classification": info.get("classification", "focal"), "local_maximum": info.get("local_maximum", False),
                 **initialization, "all_train_images_per_epoch": True,
-                "sampling": f"50/50 {' / '.join(source_names)} ; toute la petite source puis répétitions aléatoires",
+                "sampling": (f"50/50 {' / '.join(training_sources)} ; toute la petite source puis répétitions aléatoires"
+                             if len(training_sources) == 2 else "Source unique : permutation de toutes les images, sans répétition"),
                 "augmentations": False if args.no_augmentation else ("Train uniquement : miroir horizontal synchronisé boîtes, contraste/luminosité, flou 3x3 et bruit légers" if info.get("profile_run") else "Train uniquement : miroirs H/V synchronisés boîtes, contraste/luminosité, flou 3x3 et bruit légers"),
                 "architecture": {"type": info.get("architecture", "separable"), **{key: info.get(key, False) for key in ("channels", "blocks", "residual")}},
                 "selection": f"max minimum(F1 validation {' / '.join(source_names)}), puis moyenne, puis loss",
                 "reserved_door_B_used": False,
                 "data_sha256": {split: hashlib.sha256((run/f"{split}.npz").read_bytes()).hexdigest() for split in data},
                 "geometry": geometry,
+                "profile_spatial_augmentation": info.get("profile_spatial_augmentation", False),
                 "note": info.get("validation_warning", "Validation déjà utilisée pour le développement ; ne remplace pas une nouvelle porte aveugle.")}
     (run/"protocol.json").write_text(json.dumps(protocol, ensure_ascii=False, indent=2), encoding="utf-8")
     moments = {name: (np.zeros_like(view), np.zeros_like(view)) for name, view in views.items()}
@@ -169,14 +172,16 @@ def main():
         for epoch in range(args.epochs+1):
             training_losses = []
             if epoch:
-                order = balanced_order(sources["train"], rng)
+                order = (balanced_order(sources["train"], rng) if len(training_sources) == 2
+                         else rng.permutation(len(records['train'])))
                 lr = args.learning_rate*.5**((epoch-1)//args.lr_decay_every)
                 epoch_start = time.monotonic()
                 for offset in range(0, len(order), args.batch_size):
                     batch = order[offset:offset+args.batch_size]
                     if info.get("profile_run"):
                         from profile_training_data import augment_profile
-                        augmented = [augment_profile(data["train"]["images"][i], truths["train"][i], rng, enabled=not args.no_augmentation, **geometry) for i in batch]
+                        augmented = [augment_profile(data["train"]["images"][i], truths["train"][i], rng, enabled=not args.no_augmentation,
+                                     spatial=info.get("profile_spatial_augmentation", False), **geometry) for i in batch]
                     else:
                         augmented = [augment_sample(data["train"]["images"][i], truths["train"][i], rng,
                                       geometric=not args.no_augmentation, photometric=not args.no_augmentation) for i in batch]

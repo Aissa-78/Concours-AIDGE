@@ -9,13 +9,49 @@ import torch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
 from profile_detector import ProfileDetector
-from profile_training_data import augment_profile, WIDTH, HEIGHT, STRIDE
+from profile_training_data import augment_profile, zoom_translate, WIDTH, HEIGHT, STRIDE
 from person_detection_math import targets_from_boxes, evaluate_boxes
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from prepare_profile_mix import local_video,video_name
 
 
 class ProfileDetectorTests(unittest.TestCase):
+    def test_translation_moves_pixels_and_annotations_together(self):
+        image = np.zeros((1, 120, 160), np.float32)
+        image[:, 24:96, 32:64] = 1
+        original = image.copy()
+        value, boxes = zoom_translate(image, [(.3, .5, .2, .6)], 1, 8, 0, 160, 120, 8)
+        np.testing.assert_array_equal(image, original)
+        np.testing.assert_array_equal(value[:, :, 8:], image[:, :, :-8])
+        np.testing.assert_array_equal(value[:, :, :8], .5)
+        np.testing.assert_allclose(boxes, [[.35, .5, .2, .6]])
+
+    def test_zoom_clips_visible_person_without_losing_its_annotation(self):
+        image = np.zeros((1, 120, 160), np.float32)
+        _, boxes = zoom_translate(image, [(.5, .5, .4, .8)], 1.5, -40, -30, 160, 120, 8)
+        np.testing.assert_allclose(boxes, [[.5, .5, .6, 1.]])
+        with self.assertRaises(ValueError):
+            zoom_translate(image, [(.3, .5, .2, .6)], 1, -63, 0, 160, 120, 8)
+
+    def test_spatial_augmentation_keeps_valid_targets_and_inputs(self):
+        image = np.zeros((1, 120, 160), np.float32)
+        boxes = [(.3, .5, .2, .6), (.75, .5, .2, .5)]
+        changed = False
+        for seed in range(40):
+            value, targets, transformed = augment_profile(image, boxes, np.random.default_rng(seed),
+                width=160, height=120, stride=8, spatial=True)
+            self.assertEqual(value.shape, image.shape)
+            self.assertGreaterEqual(float(value.min()), 0.)
+            self.assertLessEqual(float(value.max()), 1.)
+            self.assertGreater(float(targets[2].sum()), 0.)
+            self.assertTrue(all(np.isfinite(v).all() for v in targets))
+            changed |= len(transformed) != len(boxes) or not np.allclose(transformed[:, 1:], np.asarray(boxes)[:, 1:])
+        self.assertTrue(changed)
+        value, _, transformed = augment_profile(image, boxes, np.random.default_rng(0),
+            enabled=False, width=160, height=120, stride=8, spatial=True)
+        np.testing.assert_array_equal(value, image)
+        np.testing.assert_array_equal(transformed, boxes)
+
     def test_camera_geometry_preserves_checkpoint_shapes_and_decoding(self):
         old = ProfileDetector()
         camera = ProfileDetector(output_stride=8).eval()

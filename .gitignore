@@ -5,6 +5,10 @@
 .venv-wsl/
 .venv-aidge-wsl/
 .venv-colibry-hw/
+.venv-linux/
+.venv-aidge-linux/
+.venv-colibry-linux/
+.local/colibry_camera/
 .local/colibry_sdk/
 .local/corev/
 .local/colibry_examples/

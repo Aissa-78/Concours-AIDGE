@@ -27,6 +27,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--coco-dir', type=Path, help='Lot COCO supplémentaire avec manifest.csv et labels.')
+    parser.add_argument('--spatial-augmentation', action='store_true', help='Activer zooms et recadrages pendant le train uniquement.')
+    parser.add_argument('--camera-only', action='store_true', help='Diagnostic : apprendre les seules photos caméra ; conserver la validation commune.')
     args = parser.parse_args()
     run = args.run_dir.absolute()
     if run.exists():
@@ -41,6 +43,8 @@ def main():
     for split in ('train', 'validation'):
         historical = json.loads((ROOT / f'runs/person_profile_mix_qvga_v2/{split}.json').read_text())
         for row in historical:
+            if args.camera_only and split == 'train':
+                continue
             item = {**row, 'source': 'historique', 'previous_source': row['source']}
             # Retrouver les données partagées même si le dossier vient d'un Mac.
             old_root = str(row['root']).replace('\\', '/')
@@ -63,6 +67,8 @@ def main():
         for row in csv.DictReader(manifest.open()):
             if row['split'] not in ('train', 'validation'):
                 raise ValueError('Split COCO inattendu.')
+            if args.camera_only and row['split'] == 'train':
+                continue
             boxes = []
             for line in (coco / row['label']).read_text().splitlines():
                 values = line.split()
@@ -78,6 +84,8 @@ def main():
         raise ValueError('Image de test présente dans le mélange.')
     run.mkdir(parents=True)
     info = {'profile_run': True, 'seed': 20261117, 'channels': 24, 'blocks': 3,
+            'profile_spatial_augmentation': args.spatial_augmentation,
+            'camera_only_training': args.camera_only,
             'architecture': 'profile_context', 'residual': False,
             'geometry': {'width': 160, 'height': 120, 'stride': 8},
             'input_shape': [1, 120, 160], 'output_shape': [5, 15, 20],
@@ -106,7 +114,7 @@ def main():
         (run / f'{split}.json').write_text(json.dumps(selected, ensure_ascii=False, indent=2))
         info[split] = {name: {'images': sum(row['source'] == name for row in selected),
                              'presences': sum(len(row['boxes']) for row in selected if row['source'] == name)}
-                       for name in ('camera', 'historique')}
+                       for name in ('camera', 'historique') if any(row['source'] == name for row in selected)}
     torch.set_num_threads(4)
     torch.manual_seed(info['seed'])
     model = ProfileDetector(output_stride=8).eval()

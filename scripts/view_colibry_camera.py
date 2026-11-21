@@ -32,9 +32,17 @@ def main():
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--frames', type=int, default=3, help='Nombre de captures pour le test sans fenêtre.')
     parser.add_argument('--transport', choices=['pipeline', 'single'], default='pipeline')
+    parser.add_argument('--firmware-dir', type=Path, help='Dossier privé contenant demo.bin et demo/demo (ELF).')
     args = parser.parse_args()
     root = Path(__file__).absolute().parent.parent
     sdk = root / '.local/colibry_sdk'
+    if not (sdk / 'riscv_runtime/tools/colibry_interfaces').is_dir():
+        raise SystemExit('SDK privé absent : placer le SDK ASYGN dans .local/colibry_sdk. Voir Documentation/Windows_Linux_complet.md.')
+    firmware = args.firmware_dir or root / '.local/colibry_camera'
+    if args.firmware_dir is None and not (firmware / 'demo.bin').is_file():
+        firmware = root / '.local/colibry_examples/camera_mac/build'
+    if args.load_sram and not all((firmware / name).is_file() for name in ('demo.bin', 'demo/demo')):
+        raise SystemExit('Firmware caméra privé absent : récupérer demo.bin et demo/demo auprès du groupe. Voir le guide Windows/Linux.')
     sys.path.insert(0, str(sdk / 'riscv_runtime/tools'))
     import libusb_package
     libusb_package.get_libusb1_backend()
@@ -43,7 +51,7 @@ def main():
     if args.load_sram:
         from elftools.elf.elffile import ELFFile
         from colibry_interfaces.colibry_jtag_api import Colibry_jtag_api
-        binary = root / '.local/colibry_examples/camera_mac/build/demo.bin'
+        binary = firmware / 'demo.bin'
         with (binary.parent / 'demo/demo').open('rb') as stream:
             for segment in ELFFile(stream).iter_segments():
                 if segment['p_type'] == 'PT_LOAD' and segment['p_memsz']:
