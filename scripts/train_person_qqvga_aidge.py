@@ -49,6 +49,8 @@ def main():
     parser.add_argument("--report-python", type=Path, help="Générer le rapport en fin de calcul avec cet environnement Python.")
     parser.add_argument("--check-only", action="store_true")
     parser.add_argument("--no-augmentation", action="store_true", help="Diagnostic : apprendre les images non modifiées.")
+    parser.add_argument("--prioritize-camera", action="store_true",
+                        help="Retenir d'abord le meilleur F1 sur la validation caméra.")
     parser.add_argument("--lr-decay-every", type=int, default=10, help="Diviser le LR par deux après ce nombre d'époques.")
     args = parser.parse_args()
     if min(args.epochs, args.batch_size, args.patience, args.evaluate_every, args.lr_decay_every) < 1 or args.batch_size % 2:
@@ -62,6 +64,8 @@ def main():
     geometry = info.get("geometry", {})
     training_sources = sorted(info["train"])
     source_names = sorted(info["validation"])
+    if args.prioritize_camera and "camera" not in source_names:
+        parser.error("--prioritize-camera nécessite une source camera en validation.")
     if len(training_sources) not in (1, 2):
         raise ValueError("Une source seule ou deux sources équilibrées attendues.")
     input_shape = tuple(info.get("input_shape", [1, 120, 160]))
@@ -149,7 +153,8 @@ def main():
                              if len(training_sources) == 2 else "Source unique : permutation de toutes les images, sans répétition"),
                 "augmentations": False if args.no_augmentation else ("Train uniquement : miroir horizontal synchronisé boîtes, contraste/luminosité, flou 3x3 et bruit légers" if info.get("profile_run") else "Train uniquement : miroirs H/V synchronisés boîtes, contraste/luminosité, flou 3x3 et bruit légers"),
                 "architecture": {"type": info.get("architecture", "separable"), **{key: info.get(key, False) for key in ("channels", "blocks", "residual")}},
-                "selection": f"max minimum(F1 validation {' / '.join(source_names)}), puis moyenne, puis loss",
+                "selection": ("F1 validation caméra, puis critère équilibré et loss" if args.prioritize_camera
+                              else f"max minimum(F1 validation {' / '.join(source_names)}), puis moyenne, puis loss"),
                 "reserved_door_B_used": False,
                 "data_sha256": {split: hashlib.sha256((run/f"{split}.npz").read_bytes()).hexdigest() for split in data},
                 "geometry": geometry,
@@ -237,6 +242,8 @@ def main():
                 indices = np.flatnonzero(sources["validation"] == source)
                 metrics[source], _ = metrics_function(outputs["validation"][indices], [truths["validation"][i] for i in indices])
             key = selection_key(metrics, losses["validation"])
+            if args.prioritize_camera:
+                key = (metrics["camera"]["f1"], *key)
             improved = best_key is None or key > best_key
             if improved:
                 best_key, best_epoch, best_metrics, stale = key, epoch, metrics, 0
