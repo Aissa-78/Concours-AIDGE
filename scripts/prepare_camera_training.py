@@ -23,10 +23,25 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def detection_record(root, row, source, **metadata):
+    image = root / row['image']
+    label = root / row['label']
+    boxes = []
+    for line in label.read_text().splitlines():
+        values = line.split()
+        if len(values) != 5 or values[0] != '0':
+            raise ValueError(f'Une seule classe attendue (0 = personne) dans {label}.')
+        boxes.append(tuple(map(float, values[1:])))
+    return {'source': source, 'root': str(root), 'row': row, 'boxes': boxes,
+            'image_sha256': digest(image), 'label_sha256': digest(label), **metadata}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--coco-dir', type=Path, help='Lot COCO supplémentaire avec manifest.csv et labels.')
+    parser.add_argument('--extra-camera-dir', type=Path, action='append', default=[],
+                        help='Lot caméra annoté avec manifest.csv et splits train/validation.')
     parser.add_argument('--spatial-augmentation', action='store_true', help='Activer zooms et recadrages pendant le train uniquement.')
     parser.add_argument('--camera-only', action='store_true', help='Diagnostic : apprendre les seules photos caméra ; conserver la validation commune.')
     args = parser.parse_args()
@@ -56,10 +71,18 @@ def main():
         for row in camera_rows:
             if row['split'] != split:
                 continue
-            boxes = [tuple(map(float, line.split()[1:])) for line in (camera / row['label']).read_text().splitlines()]
-            records.append({'source': 'camera', 'root': str(camera), 'row': row,
-                            'boxes': boxes, 'image_sha256': digest(camera / row['image']),
-                            'label_sha256': digest(camera / row['label'])})
+            records.append(detection_record(camera, row, 'camera'))
+    for root in args.extra_camera_dir:
+        root = root.absolute()
+        manifest = root / 'manifest.csv'
+        manifests[str(manifest)] = digest(manifest)
+        with manifest.open() as handle:
+            for row in csv.DictReader(handle):
+                if row['split'] not in ('train', 'validation'):
+                    raise ValueError(f'Split caméra inattendu dans {manifest}.')
+                if row['reviewed'] not in ('oui', 'assistant_visual'):
+                    raise ValueError(f'Annotation à vérifier pour {row["image"]}.')
+                records.append(detection_record(root, row, 'camera'))
     if args.coco_dir:
         coco = args.coco_dir.absolute()
         manifest = coco / 'manifest.csv'
@@ -69,16 +92,7 @@ def main():
                 raise ValueError('Split COCO inattendu.')
             if args.camera_only and row['split'] == 'train':
                 continue
-            boxes = []
-            for line in (coco / row['label']).read_text().splitlines():
-                values = line.split()
-                if len(values) != 5 or values[0] != '0':
-                    raise ValueError('Une seule classe attendue : 0 = personne.')
-                boxes.append(tuple(map(float, values[1:])))
-            records.append({'source': 'historique', 'previous_source': 'coco_2000',
-                            'root': str(coco), 'row': row, 'boxes': boxes,
-                            'image_sha256': digest(coco / row['image']),
-                            'label_sha256': digest(coco / row['label'])})
+            records.append(detection_record(coco, row, 'historique', previous_source='coco_2000'))
     assert_disjoint(records)
     if test_hashes & {row['image_sha256'] for row in records}:
         raise ValueError('Image de test présente dans le mélange.')
@@ -92,7 +106,7 @@ def main():
             'classification': 'focal', 'local_maximum': True, 'threshold': .5,
             'initialization': 'Poids v1, quatrième convolution à stride 1 pour QQVGA. Adam neuf.',
             'manifests': manifests, 'rows': records,
-            'validation_warning': 'Même session pour la caméra. 8 images de validation seulement. Ne prouve pas la généralisation à une nouvelle porte.',
+            'validation_warning': 'Les images caméra de validation peuvent venir de la même session de capture que le train. Vérifier la généralisation sur des vidéos réservées.',
             'reserved_camera_test_sha256': sorted(test_hashes),
             'test_manifest': str(camera / 'manifest.csv')}
     for split in ('train', 'validation'):

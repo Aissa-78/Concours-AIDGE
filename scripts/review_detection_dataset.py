@@ -4,6 +4,7 @@ Commandes dans la fenêtre :
 - glisser avec le clic gauche : ajouter un rectangle ;
 - clic droit sur un rectangle : le supprimer ;
 - S : enregistrer et marquer l'image comme vérifiée ;
+- X : écarter une image lorsque --allow-discard est activé ;
 - N : image suivante sans valider ; P : précédente ; Q : quitter.
 
 Par défaut, la validation est revue en premier : elle servira ensuite à
@@ -15,6 +16,7 @@ from __future__ import annotations
 import argparse
 import csv
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import cv2
 
@@ -27,6 +29,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--split", choices=["train", "validation", "all"], default="validation")
     parser.add_argument("--video", help="Ne revoir qu'une vidéo (nom de fichier complet).")
     parser.add_argument("--include-reviewed", action="store_true")
+    parser.add_argument("--allow-discard", action="store_true", help="X écarte une image inexploitable.")
+    parser.add_argument("--without-proposals", action="store_true", help="Afficher les images proposées sans rectangle.")
     parser.add_argument(
         "--start-index", type=int, default=1,
         help="Commencer à cette image de la sélection (numéro affiché, à partir de 1).",
@@ -82,7 +86,8 @@ def main() -> None:
         index for index, row in enumerate(rows)
         if (args.split == "all" or row["split"] == args.split)
         and (not args.video or row["video"] == args.video)
-        and (args.include_reviewed or row["reviewed"] != "oui")
+        and (not args.without_proposals or row.get("rectangles_proposes") == "0")
+        and (args.include_reviewed or row["reviewed"] not in ("oui", "ecartee"))
     ]
     if not selected:
         print("Aucune image à revoir avec ces filtres.")
@@ -90,7 +95,8 @@ def main() -> None:
     if not 1 <= args.start_index <= len(selected):
         raise SystemExit(f"--start-index doit être entre 1 et {len(selected)}.")
 
-    print(f"{len(selected)} images à revoir. Clic gauche glissé : ajouter ; clic droit : supprimer ; S : sauver ; P : retour ; Q : quitter.", flush=True)
+    discard_hint = " X : écarter." if args.allow_discard else ""
+    print(f"{len(selected)} images à revoir. Clic gauche glissé : ajouter ; clic droit : supprimer ; S : sauver ; P : retour ; Q : quitter.{discard_hint}", flush=True)
     window = "FlowSense - annotation"
     cv2.namedWindow(window, cv2.WINDOW_AUTOSIZE)
     position = args.start_index - 1
@@ -144,20 +150,28 @@ def main() -> None:
             cv2.setWindowTitle(
                 window,
                 f"{position + 1}/{len(selected)} | {describe_image(row)} "
-                f"| {len(state['boxes'])} rectangles | S=sauver N=suivant P=precedent Q=quitter",
+                f"| {len(state['boxes'])} rectangles | S=valider"
+                f"{' X=ecarter' if args.allow_discard else ''} N=suivant P=precedent Q=quitter",
             )
             key = cv2.waitKey(30) & 0xFF
             if cv2.getWindowProperty(window, cv2.WND_PROP_VISIBLE) < 1:
                 cv2.destroyAllWindows()
                 return
-            if key in (ord("s"), ord("S")):
-                write_boxes(label_path, state["boxes"], width, height)
-                row["reviewed"] = "oui"
-                with manifest_path.open("w", newline="", encoding="utf-8") as output:
+            save = key in (ord("s"), ord("S"))
+            discard = args.allow_discard and key in (ord("x"), ord("X"))
+            if save or discard:
+                if save:
+                    write_boxes(label_path, state["boxes"], width, height)
+                row["reviewed"] = "oui" if save else "ecartee"
+                with NamedTemporaryFile(
+                    "w", dir=manifest_path.parent, newline="", encoding="utf-8", delete=False
+                ) as output:
+                    temporary = Path(output.name)
                     writer = csv.DictWriter(output, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(rows)
-                print(f"Vérifiée : {row['image']} ({len(state['boxes'])} rectangles)")
+                temporary.replace(manifest_path)
+                print(f"{'Vérifiée' if save else 'Écartée'} : {row['image']}")
                 position += 1
                 break
             if key in (ord("n"), ord("N")):

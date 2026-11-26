@@ -27,28 +27,44 @@ personnes.
 
 ### Relancer l’entraînement Aidge
 
-Activez l’environnement où Aidge CPU fonctionne, puis ouvrez un terminal
-**à la racine du dépôt**. Les commandes ci-dessous tiennent sur une ligne
-et s’utilisent aussi dans PowerShell. Le contrôle a été vérifié sur Mac
-avec l’environnement `.venv-aidge-colibry` (Aidge Core et backend CPU
-0.10.0.post3). Sur Windows et Linux, suivez le
-[guide de l’équipe](../Documentation/Windows_Linux_complet.md), puis
-lancez ce contrôle pour valider votre environnement avant l’entraînement.
+Sur **Windows**, ouvrez Ubuntu/WSL2 et extrayez le ZIP dans votre copie
+Linux du dépôt. Sur **Linux natif**, utilisez le même environnement
+d’entraînement. Installez-le en suivant le
+[guide Windows et Linux](../Documentation/Windows_Linux_complet.md).
+
+À la racine du dépôt sous Linux ou WSL2 :
+
+```bash
+source .venv-aidge-linux/bin/activate
+```
+
+Sur le Mac déjà configuré :
+
+```bash
+source .venv-aidge-colibry/bin/activate
+```
+
+Vérifiez d’abord le lot et le calcul Aidge :
 
 ```bash
 python scripts/train_person_qqvga_aidge.py --run-dir dataset/detection_flowsense_equipe_2026-11-26/aidge --check-only
 ```
 
-Lancez ensuite un entraînement de 20 époques maximum à partir des poids
-inclus. Le meilleur F1 sur la validation caméra est prioritaire.
+Le contrôle passe sur le Mac avec Aidge Core et son backend CPU
+`0.10.0.post3`. Le test équivalent sur Windows/WSL et Linux reste à
+faire sur la machine qui va entraîner. Après réussite, lancez jusqu’à
+20 époques avec les poids de départ du lot et la priorité caméra :
 
 ```bash
 python scripts/train_person_qqvga_aidge.py --run-dir dataset/detection_flowsense_equipe_2026-11-26/aidge --init-weights dataset/detection_flowsense_equipe_2026-11-26/aidge/poids_depart.npz --epochs 20 --batch-size 8 --learning-rate 0.00012 --evaluate-every 1 --patience 7 --lr-decay-every 4 --prioritize-camera
 ```
 
-Les résultats seront écrits dans le dossier `aidge/` du lot extrait. Pour
-refaire un essai après un premier entraînement, conservez les résultats
-et repartez d’une extraction propre.
+Les résultats sont écrits dans `aidge/`. Pour refaire un essai, gardez
+vos résultats et repartez d’une extraction propre.
+
+Pour tester le détecteur **sur une image dans Windows natif**, suivez
+[le test OpenCV](../Documentation/Windows_Linux_complet.md#tester-notre-détecteur-onnx).
+Ce mode fonctionne à partir du fichier ONNX livré dans le dépôt.
 
 ## Sous-ensemble initial : Wake Vision
 

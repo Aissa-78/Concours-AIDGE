@@ -12,6 +12,7 @@ avant utilisation du réseau du projet.
 | Besoin | Windows | Linux Ubuntu 24.04, Python 3.12 |
 |---|---|---|
 | Interface YOLO, vidéos, annotation | Windows natif | Linux natif |
+| Détecteur FlowSense ONNX sur une image | Windows natif avec OpenCV | Linux natif avec OpenCV |
 | Entraînement Aidge CPU | Ubuntu 24.04 dans WSL2 | Linux natif |
 | Caméra Colibry | Windows natif, pilote USB à configurer | Linux natif, permissions USB à configurer |
 
@@ -91,6 +92,38 @@ FLOWSENSE_PYTHON=python3.12 bash Installer_Linux.sh app
 ./.venv-linux/bin/python scripts/prepare_coco_2000.py
 ```
 
+## Tester notre détecteur ONNX
+
+Utilisez une photo dans le dossier du projet, par exemple `test.jpg`. Le
+modèle `FlowSense_miroir_lumiere_v1.onnx` est livré dans `models/`.
+Le script écrit une image PNG agrandie avec les rectangles dans
+`runs/onnx/`. Les photos de votre caméra peuvent être utilisées directement.
+
+Sur Windows, dans PowerShell à la racine du dépôt :
+
+```powershell
+.\Installer_outils_Windows.bat app
+.\.venv\Scripts\python.exe scripts/predict_flowsense_onnx.py --image "test.jpg"
+```
+
+Sur Linux :
+
+```bash
+bash Installer_Linux.sh app
+./.venv-linux/bin/python scripts/predict_flowsense_onnx.py --image "test.jpg"
+```
+
+Sur Mac, dans l’environnement local de l’interface :
+
+```bash
+./.venv/bin/python scripts/predict_flowsense_onnx.py --image "test.jpg"
+```
+
+Le seuil par défaut est `0.50`. Pour essayer `0.35`, ajouter
+`--threshold 0.35`. L’option `--model "chemin/vers/modele.onnx"` permet de
+tester un autre [modèle de l’équipe](https://github.com/Aissa-78/Concours-AIDGE/releases/tag/flowsense-modeles-2026-11-26). Le bouton de
+comptage de l’interface vidéo utilise toujours YOLO.
+
 ## 4. Aidge sous Windows : Ubuntu/WSL
 
 Cette étape concerne l'entraînement, pas l'ouverture de l'interface Windows.
@@ -143,41 +176,19 @@ Les paquets peuvent évoluer : ce test simple ne suffit pas à certifier notre
 réseau complet. Vérifier celui-ci avant tout apprentissage long :
 
 ```bash
-./.venv-aidge-linux/bin/python scripts/train_person_qqvga_aidge.py --run-dir runs/mon_essai_linux_v1 --check-only
+./.venv-aidge-linux/bin/python scripts/train_person_qqvga_aidge.py --run-dir dataset/detection_flowsense_equipe_2026-11-26/aidge --check-only
 ```
 
-Le dossier `mon_essai_linux_v1` doit d'abord être préparé comme ci-dessous.
-Si les paquets binaires n'existent pas pour votre architecture, l'installation
-peut demander une compilation ; suivre la [procédure officielle Aidge](https://eclipse.dev/aidge/source/GetStarted/install.html).
-Pour Windows natif, cette documentation décrit la compilation avec CMake,
-un compilateur C++ et `setup.ps1`. Elle n'est pas automatisée ici : le parcours
-préparé utilise WSL, et ne prétend pas installer les wheels Linux sur Windows.
+Pour utiliser les fichiers du **dernier entraînement**, récupérez le
+[ZIP privé de l’équipe](../dataset/DATASET.md) et extrayez-le à la racine
+de cette copie Linux du dépôt. Lancez le `--check-only` indiqué dans ce
+guide avec `./.venv-aidge-linux/bin/python`. Ce contrôle doit réussir
+avant l’apprentissage. Les modules pip Linux peuvent différer de la
+version du Mac. Si vous voyez une erreur `Pad` ou `std::bad_cast`,
+gardez le message et le fichier `installed_versions.txt`.
 
-### Données privées nécessaires pour notre entraînement actuel
-
-Récupérer auprès du groupe, **sans les environnements Python** :
-
-- `dataset/camera_reelle_20261117_v1/` ;
-- `dataset/profile_mix_human_v1/` et les fichiers auxquels ses manifests font référence ;
-- `dataset/coco_qqvga_2000_v1/`, ou le télécharger avec les mêmes exclusions ;
-- `runs/person_profile_mix_qvga_v2/train.json` et `validation.json` ;
-- `runs/person_profile_mix_qvga_v1/best_dense.npz` et `best.onnx` pour la comparaison du rapport.
-
-L'installateur ne peut pas recréer nos photos personnelles ou nos poids.
-Ne pas réutiliser un essai préparé avec des chemins `/Users/...` : préparer
-un nouveau dossier sur Linux ; la préparation relocalise les racines historiques.
-
-```bash
-./.venv-linux/bin/python scripts/prepare_camera_training.py --coco-dir dataset/coco_qqvga_2000_v1 --run-dir runs/mon_essai_linux_v1
-./.venv-aidge-linux/bin/python scripts/train_person_qqvga_aidge.py --run-dir runs/mon_essai_linux_v1 --check-only
-OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 ./.venv-aidge-linux/bin/python scripts/train_person_qqvga_aidge.py --run-dir runs/mon_essai_linux_v1 --epochs 20 --batch-size 8 --learning-rate 0.0003 --evaluate-every 2 --patience 5 --lr-decay-every 8
-./.venv-linux/bin/python scripts/report_camera_training.py --run-dir runs/mon_essai_linux_v1 --aidge-python .venv-aidge-linux/bin/python
-```
-
-Lancer un entraînement en vérifiant d'abord les données. Cette commande
-reproduit un protocole technique ; elle ne garantit pas une amélioration.
-La quantification et l'export Colibry demandent d'autres modules et les outils
-ASYGN autorisés, non installés par ce profil Aidge CPU.
+Pour Aidge natif Windows ou si les wheels Linux manquent, voir la
+[procédure officielle Aidge](https://eclipse.dev/aidge/source/GetStarted/install.html).
 
 ## 6. Caméra : fichiers privés à récupérer avant lancement
 

@@ -1,6 +1,12 @@
 # Guide pour entraîner le détecteur FlowSense
 
-**Nouvelle expérience :** pour le modèle V2 entraîné dans Aidge avec COCO et les images de portes, suivre [Entraînement Aidge + COCO](Entrainement_Aidge_COCO.md). Le présent guide reste celui de l'ancien modèle PyTorch.
+## Modèle de référence du 26 novembre 2026
+
+- [Tester le modèle avec OpenCV](Windows_Linux_complet.md#tester-notre-détecteur-onnx).
+- [Relancer l’entraînement Aidge avec le dataset de 2 886 images](../dataset/DATASET.md#relancer-lentraînement-aidge).
+- [Télécharger les versions ONNX et les poids Aidge](https://github.com/Aissa-78/Concours-AIDGE/releases/tag/flowsense-modeles-2026-11-26).
+
+## Ancien entraînement PyTorch en 96 × 96
 
 Ce guide permet de refaire l'entraînement du **petit modèle PyTorch** sans utiliser Codex. Il reçoit une image de 96 × 96 pixels et produit une carte de positions possibles des personnes. Il ne suit pas encore les personnes et ne compte pas les entrées ou les sorties. La démonstration vidéo qui utilise YOLO est un programme distinct.
 
@@ -42,7 +48,7 @@ Les **179 images de train** servent à modifier les poids du réseau. Les **58 i
 
 Les quatre vidéos `porte_B_...` sont réservées à un **test indépendant** dans `dataset/porte_B_test/`. Ne pas les ajouter à l'entraînement : sinon le test ne dira plus si le modèle fonctionne dans un nouvel endroit. Copier simplement des vidéos dans `videos_test/` ne les ajoute pas au jeu d'entraînement existant.
 
-Les vidéos, images extraites, annotations et modèles entraînés restent sur l'ordinateur : ils sont ignorés par Git. Un camarade qui clone seulement GitHub doit recevoir ces données séparément ou recréer son propre jeu.
+Les vidéos, images extraites, annotations et poids de cet ancien modèle restent sur l’ordinateur. Un camarade qui clone seulement GitHub doit recevoir ces données séparément ou recréer son propre jeu.
 
 ## 4 Corriger les rectangles si nécessaire
 
@@ -62,7 +68,7 @@ Sur Windows :
 
 Remplacer `train` par `validation` pour revoir la validation. Pour un nouveau jeu dont les images ne sont pas encore vérifiées, **retirer** `--include-reviewed`.
 
-## 5 Entraîner le modèle actuel
+## 5 Entraîner le modèle PyTorch en 96 × 96
 
 Lancer cette commande depuis le dossier du projet. Elle recommence un entraînement à partir de poids neufs ; elle ne continue pas automatiquement l'ancien modèle.
 

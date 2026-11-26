@@ -1,9 +1,11 @@
 # FlowSense sur Windows — guide pour le groupe
 
-Voir aussi le [parcours complet Windows/Linux](Windows_Linux_complet.md), ajouté
-le 21 novembre : nouveaux installateurs, Aidge dans WSL et caméra native.
-
-Mise à jour du 10 novembre 2026. Le dépôt contient le code commun Mac/Windows, les lanceurs Windows et les bilans. Il ne contient pas les vidéos personnelles, datasets, poids locaux ou environnements Python. GitHub Pro et Copilot ne sont pas nécessaires pour utiliser le code.
+Mise à jour du 26 novembre 2026. Le modèle QQVGA de référence est dans
+`models/`. Suivez le [test ONNX sur Windows](Windows_Linux_complet.md#tester-notre-détecteur-onnx)
+pour essayer notre détecteur sur une photo avec l’environnement de l’interface.
+Pour réentraîner le modèle, utilisez le
+[dataset privé et la procédure Ubuntu/WSL2](../dataset/DATASET.md).
+GitHub Pro et Copilot sont facultatifs.
 
 ## 1. Récupérer la dernière version
 

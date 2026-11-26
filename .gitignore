@@ -33,10 +33,11 @@ dataset/profile_*/
 dataset/wepdtof_*/
 dataset/camera_*/
 
-# Modèles entraînés : ils peuvent être lourds et sont régénérés par train.py
+# Modèles locaux et exports ; le détecteur ONNX de référence est distribué.
 models/*.pt
 models/*.pth
 models/*.onnx
+!models/FlowSense_miroir_lumiere_v1.onnx
 models/*.npz
 yolo*.pt
 runs/

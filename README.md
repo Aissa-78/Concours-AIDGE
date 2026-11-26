@@ -10,25 +10,22 @@ Cette phrase décrit la cible embarquée. Le prototype de développement sur PC
 conserve localement des images et vidéos pour l'entraînement et les essais ;
 elles ne sont pas publiées sur GitHub.
 
-## Pour les camarades sur Windows
+## Démarrer sur Windows, Linux ou Mac
 
-**Nouveau : [guide complet Windows et Linux](Documentation/Windows_Linux_complet.md)**
-avec installateurs séparés pour l'interface, Aidge sous Linux/WSL et la caméra
-Colibry. Les données, le SDK et le firmware privé restent à récupérer auprès
-du groupe. La validation matérielle Windows/Linux reste à faire sur vos PC.
+- **Tester notre détecteur** sur une image avec OpenCV. Le modèle QQVGA
+  de référence est inclus. Voir les [commandes par système](Documentation/Windows_Linux_complet.md#tester-notre-détecteur-onnx).
+- **Ouvrir l’interface vidéo YOLO** avec `FlowSense_Windows.bat` sous Windows,
+  `FlowSense_Linux.sh` sous Linux ou `FlowSense.command` sur Mac.
+- **Réentraîner notre modèle dans Aidge** avec le [dataset privé de l’équipe](dataset/DATASET.md).
+  Sur Windows, utiliser Ubuntu dans WSL2. Sur Linux, utiliser l’environnement
+  Aidge Linux. Contrôler le réseau avec `--check-only` avant de lancer le calcul.
+- **Retrouver les poids des neuf essais du 22 au 25 novembre** dans la
+  [version GitHub des modèles](https://github.com/Aissa-78/Concours-AIDGE/releases/tag/flowsense-modeles-2026-11-26).
 
-1. Récupérer le dépôt à jour (`git pull --ff-only` ou **Code → Download ZIP**, puis extraire le ZIP).
-2. Ouvrir le dossier extrait dans VS Code, avec Python 3.11 ou 3.12 installé.
-3. Double-cliquer sur **Installer_Windows.bat**, puis sur **FlowSense_Windows.bat** pour l'interface YOLO.
-4. Pour vérifier les annotations du jeu partagé : **Relecture_Windows.bat**, puis choisir validation ou entraînement.
-
-Le [guide Windows complet](Documentation/Installation_Windows.md) explique
-l'installation, les commandes PowerShell, les fichiers privés à récupérer et
-la différence entre l'interface YOLO et l'entraînement de notre modèle Aidge.
-L'installateur Windows installe l'interface et PyTorch CPU, **pas Aidge**.
-Les tests automatiques Windows/Linux sont définis dans
-`.github/workflows/tests.yml` ; ils ne valident ni l'affichage interactif ni
-l'exécution Aidge/Colibry sur Windows.
+Les tests Windows/Linux couvrent le code et la détection ONNX sur une image
+synthétique. Le flux USB de la Colibry et l’entraînement de ce modèle dans
+Aidge restent à valider sur ces systèmes. Les captures et le SDK ASYGN se
+récupèrent via le partage privé et le portail ASYGN.
 
 ## Documents du dépôt
 
@@ -44,6 +41,17 @@ l'exécution Aidge/Colibry sur Windows.
 -  Depot Git AIDGE AI : https://eclipse.dev/aidge/index.html
   
 ## État actuel
+
+### Mise à jour du 26 novembre 2026
+
+Le détecteur de référence `FlowSense_miroir_lumiere_v1.onnx` travaille en gris
+160 × 120. Il a été entraîné avec 2 886 images et comparé avec les essais
+précédents sur 115 captures réservées. Au seuil de confiance 0,50, il obtient
+79,7 % de F1 de détection. Au seuil 0,35, il obtient 85,7 % de F1
+(57 personnes bien encadrées sur 74, 2 rectangles incorrects). Le test ne
+comprend aucune scène à deux personnes.
+L’essai embarqué du 23 novembre utilisait un modèle plus ancien. Le comptage
+avec le modèle de référence et sa consommation restent à valider sur carte.
 
 ### Mise à jour du 17 novembre : caméra réelle et 2 000 images COCO
 
